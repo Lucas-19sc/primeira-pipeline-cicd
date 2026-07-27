@@ -47,53 +47,9 @@ jobs:
   # CD - DEPLOY DA IMAGEM NO CLUSTER EKS
   # ==========================================
   CD:
-    name: Deploy no Amazon EKS
-    runs-on: ubuntu-latest
-    needs: CI
-
-    steps:
-
-      # Baixa o código para acessar os manifestos Kubernetes
-      - name: Obtendo o código
-        uses: actions/checkout@v4
-
-      # Configura as credenciais do usuário IAM user-lab
-      - name: Configurando credenciais AWS
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      # Mostra qual usuário IAM está sendo usado pela pipeline
-      - name: Verificando identidade AWS
-        run: aws sts get-caller-identity
-
-      # Gera o kubeconfig para acessar o cluster
-      - name: Configurando acesso ao cluster EKS
-        run: |
-          aws eks update-kubeconfig \
-            --region us-east-1 \
-            --name eks-lab
-
-      # Confirma que o usuário possui acesso ao Kubernetes
-      - name: Testando acesso ao Kubernetes
-        run: |
-          echo "Contexto atual:"
-          kubectl config current-context
-
-          echo "Nós do cluster:"
-          kubectl get nodes
-
-          echo "Pods existentes:"
-          kubectl get pods --all-namespaces
-
-      # Executa o deployment e substitui a imagem pela versão criada no CI
-      - name: Executando o manifesto Kubernetes
-        uses: Azure/k8s-deploy@v7
-        with:
-          manifests: |
-            ./k8s/deployment.yaml
-
-          images: |
-            lucascardoso1/aula-primeira-pipeline:v${{ github.run_number }}
+    needs: [CI]
+    uses: Lucas-19sc/primeira-pipeline-cicd/.github/workflows/deploy.yaml@main
+    with:
+      manifests: k8s/deployment.yaml
+      images: lucascardoso1/aula-primeira-pipeline:v${{ github.run_number }}
+    secrets: inherit

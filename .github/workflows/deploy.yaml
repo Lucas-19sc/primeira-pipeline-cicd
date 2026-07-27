@@ -1,0 +1,70 @@
+name: Deploy no Kubernetes
+
+on:
+  workflow_call:
+    inputs:
+      manifests:
+        type: string
+        required: true
+        description: "Arquivos de manifesto para deploy"
+
+      images:
+        type: string
+        required: true
+        description: "Imagens que serão alteradas nos manifestos"
+
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+
+jobs:
+  deploy-k8s:
+    name: Deploy no Amazon EKS
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # Baixa o código para acessar os manifestos Kubernetes
+      - name: Obtendo o código
+        uses: actions/checkout@v4
+
+      # Configura as credenciais do usuário IAM user-lab
+      - name: Configurando credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # Mostra qual usuário IAM está sendo usado pela pipeline
+      - name: Verificando identidade AWS
+        run: aws sts get-caller-identity
+
+      # Gera o kubeconfig para acessar o cluster
+      - name: Configurando acesso ao cluster EKS
+        run: |
+          aws eks update-kubeconfig \
+            --region us-east-1 \
+            --name eks-lab
+
+      # Confirma que o usuário possui acesso ao Kubernetes
+      - name: Testando acesso ao Kubernetes
+        run: |
+          echo "Contexto atual:"
+          kubectl config current-context
+
+          echo "Nós do cluster:"
+          kubectl get nodes
+
+          echo "Pods existentes:"
+          kubectl get pods --all-namespaces
+
+      # Executa o deployment e substitui a imagem pela versão criada no CI
+      - name: Executando o manifesto Kubernetes
+        uses: Azure/k8s-deploy@v7
+        with:
+          manifests: ${{ inputs.manifests }}
+          images: ${{ inputs.images }}
