@@ -20,6 +20,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Verificando identidade AWS do GitHub
+        run: aws sts get-caller-identity    
 
       - name: Build e Push da Imagem Docker
         uses: docker/build-push-action@v6
