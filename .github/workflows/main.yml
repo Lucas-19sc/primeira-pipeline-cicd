@@ -13,6 +13,7 @@ jobs:
   # ==========================================
   # CI - BUILD E ENVIO DA IMAGEM
   # ==========================================
+  
   CI:
     name: Build da imagem Docker
     runs-on: ubuntu-latest
