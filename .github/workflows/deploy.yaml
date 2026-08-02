@@ -32,6 +32,33 @@ jobs:
       - name: Obtendo o código
         uses: actions/checkout@v4
 
+      - name: Validando secrets do ambiente
+        shell: bash
+        env:
+          ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          SECRET_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          KUBE_CONFIG: ${{ secrets.K8S_CONFIG }}
+        run: |
+          echo "Environment selecionado: ${{ inputs.environment }}"
+          echo "Namespace: ${{ vars.APP_NAMESPACE }}"
+
+          if [ -z "$ACCESS_KEY" ]; then
+            echo "::error::AWS_ACCESS_KEY_ID está vazio no Environment ${{ inputs.environment }}"
+            exit 1
+          fi
+
+          if [ -z "$SECRET_KEY" ]; then
+            echo "::error::AWS_SECRET_ACCESS_KEY está vazio no Environment ${{ inputs.environment }}"
+            exit 1
+          fi
+
+          if [ -z "$KUBE_CONFIG" ]; then
+            echo "::error::K8S_CONFIG está vazio no Environment ${{ inputs.environment }}"
+            exit 1
+          fi
+
+          echo "Todos os secrets foram encontrados."
+
       # Usa as credenciais AWS do Environment selecionado
       - name: Configurando credenciais AWS
         uses: aws-actions/configure-aws-credentials@v6
