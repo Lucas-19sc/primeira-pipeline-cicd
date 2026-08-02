@@ -13,6 +13,12 @@ on:
         required: true
         description: "Imagens que serão alteradas nos manifestos"
 
+      environment:
+       type: string
+       required: true
+       description: "nome do ambiente que vai ser utilizado"  
+
+
     secrets:
       AWS_ACCESS_KEY_ID:
         required: true
@@ -24,6 +30,7 @@ jobs:
   deploy-k8s:
     name: Deploy no Amazon EKS
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
 
     steps:
 
@@ -68,3 +75,4 @@ jobs:
         with:
           manifests: ${{ inputs.manifests }}
           images: ${{ inputs.images }}
+          namespace: ${{ vars.APP_NAMESPACE}}

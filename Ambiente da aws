@@ -1,0 +1,30 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: eks-lab
+  region: sa-east-1
+  version: "1.36"
+
+vpc:
+  nat:
+    gateway: Disable
+
+  clusterEndpoints:
+    publicAccess: true
+    privateAccess: true
+
+managedNodeGroups:
+  - name: workers-lab
+
+    instanceType: t3.small
+
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 2
+
+    volumeSize: 20
+    privateNetworking: false
+
+    labels:
+      ambiente: laboratorio

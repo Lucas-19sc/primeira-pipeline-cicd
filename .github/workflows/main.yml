@@ -2,8 +2,7 @@ name: CI-CD
 
 on:
   push:
-    branches:
-      - main
+
 
   workflow_dispatch:
 
@@ -20,7 +19,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       # Baixa o código do repositório
       - name: Obtendo o código
         uses: actions/checkout@v4
@@ -46,10 +44,50 @@ jobs:
   # ==========================================
   # CD - DEPLOY DA IMAGEM NO CLUSTER EKS
   # ==========================================
-  CD:
+  CD-Homolog:
+    name: Deploy em Homologação
     needs: [CI]
-    uses: Lucas-19sc/primeira-pipeline-cicd/.github/workflows/deploy.yaml@main
-    with:
-      manifests: k8s/deployment.yaml
-      images: lucascardoso1/aula-primeira-pipeline:v${{ github.run_number }}
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtendo o código
+        uses: actions/checkout@v4.1.5
+
+      - name: Configuração de contexto do Kubernetes
+        uses: azure/k8s-set-context@v4.0.0
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.K8S_CONFIG }}
+
+      - name: Execução do Manifesto
+        uses: Azure/k8s-deploy@v5
+        with:
+          manifests: |
+            ./k8s/deployment.yaml
+          images: |
+            lucascardoso1/aula-primeira-pipeline:v${{ github.run_number }}
+          environment: homologacao
+          secrets: inherit
+
+  CD-Producao:
+    name: Deploy em Produção
+    needs: [CI]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtendo o código
+        uses: actions/checkout@v4.1.5
+
+      - name: Configuração de contexto do Kubernetes
+        uses: azure/k8s-set-context@v4.0.0
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.K8S_CONFIG }}
+
+      - name: Execução do Manifesto
+        uses: Azure/k8s-deploy@v5
+        with:
+          manifests: |
+            ./k8s/deployment.yaml
+          images: |
+            lucascardoso1/aula-primeira-pipeline:v${{ github.run_number }}
+          environment: producao
+          secrets: inherit
