@@ -13,7 +13,7 @@ jobs:
   # ==========================================
   # CI - BUILD E ENVIO DA IMAGEM
   # ==========================================
- CI:
+  CI:
     name: Build da imagem Docker
     runs-on: ubuntu-latest
 
@@ -51,31 +51,29 @@ jobs:
       images: lucascardoso1/aula-primeira-pipeline:v${{ github.run_number }}
       environment: homologacao
 
- # ==========================================
-  # CD - Teste-Ambiente
+  # ==========================================
+  # TESTE DO AMBIENTE DE HOMOLOGAÇÃO
   # ==========================================
   Teste-Ambiente:
-    name: Deploy em Produção
+    name: Teste em Homologação
     runs-on: ubuntu-latest
     needs: [CD-Homolog]
     environment: homologacao
-    steps:
-      - name: "Fake teste"
-        run: "Fake teste de ambiente ${{ $vars.APP_NAMESPACE }}"
 
+    steps:
+      - name: Fake teste
+        run: echo "Fake teste de ambiente ${{ vars.APP_NAMESPACE }}"
 
   # ==========================================
   # CD - PRODUÇÃO
   # ==========================================
-   CD-Producao:
+  CD-Producao:
     name: Deploy em Produção
-    needs: [CD-Homolog]
+    needs: [Teste-Ambiente]
 
-    uses: ./.github/workflows/deploy.yaml@main
+    uses: ./.github/workflows/deploy.yaml
 
     with:
       manifests: ./k8s/deployment.yaml
       images: lucascardoso1/aula-primeira-pipeline:v${{ github.run_number }}
       environment: producao
-
-
