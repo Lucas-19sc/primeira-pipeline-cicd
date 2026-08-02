@@ -50,6 +50,7 @@ jobs:
       manifests: ./k8s/deployment.yaml
       images: lucascardoso1/aula-primeira-pipeline:v${{ github.run_number }}
       environment: homologacao
+      secrets: inherit
 
   # ==========================================
   # TESTE DO AMBIENTE DE HOMOLOGAÇÃO
@@ -77,4 +78,4 @@ jobs:
       manifests: ./k8s/deployment.yaml
       images: lucascardoso1/aula-primeira-pipeline:v${{ github.run_number }}
       environment: producao
-      #
+      secrets: inherit
