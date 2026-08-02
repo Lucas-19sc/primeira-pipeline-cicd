@@ -22,7 +22,7 @@ jobs:
   deploy-k8s:
     name: Deploy no Amazon EKS
     runs-on: ubuntu-latest
-
+#
     # Seleciona homologacao ou producao
     environment: ${{ inputs.environment }}
 
