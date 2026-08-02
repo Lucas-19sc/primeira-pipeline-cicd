@@ -3,33 +3,30 @@ name: CI-CD
 on:
   push:
 
-
   workflow_dispatch:
 
 permissions:
   contents: read
+
 jobs:
 
   # ==========================================
-  # CI - BUILD E ENVIO DA IMAGEM PARA O DOCKER
+  # CI - BUILD E ENVIO DA IMAGEM
   # ==========================================
   CI:
     name: Build da imagem Docker
     runs-on: ubuntu-latest
 
     steps:
-      # Baixa o código do repositório
       - name: Obtendo o código
         uses: actions/checkout@v4
 
-      # Autentica no Docker Hub
       - name: Autenticação no Docker Hub
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Cria e envia a imagem para o Docker Hub
       - name: Build e Push da imagem Docker
         uses: docker/build-push-action@v7
         with:
@@ -41,62 +38,44 @@ jobs:
             lucascardoso1/aula-primeira-pipeline:latest
 
   # ==========================================
-  # CD - DEPLOY DA IMAGEM NO CLUSTER EKS
+  # CD - HOMOLOGAÇÃO
   # ==========================================
   CD-Homolog:
     name: Deploy em Homologação
     needs: [CI]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Obtendo o código
-        uses: actions/checkout@v4.1.5
 
-      - name: Configuração de credenciais AWS
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+    uses: ./.github/workflows/deploy.yaml
 
-      - name: Configuração de contexto do Kubernetes
-        uses: azure/k8s-set-context@v4.0.0
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.K8S_CONFIG }}
+    with:
+      manifests: ./k8s/deployment.yaml
+      images: lucascardoso1/aula-primeira-pipeline:v${{ github.run_number }}
+      environment: homologacao
 
-      - name: Execução do Manifesto
-        uses: Azure/k8s-deploy@v5
-        with:
-          manifests: |
-            ./k8s/deployment.yaml
-          images: |
-            lucascardoso1/aula-primeira-pipeline:v${{ github.run_number }}
-
-  CD-Producao:
+ # ==========================================
+  # CD - Teste-Ambiente
+  # ==========================================
+  Teste-Ambiente:
     name: Deploy em Produção
-    needs: [CI]
     runs-on: ubuntu-latest
+    needs: [CD-Homolog]
+    environment: homologacao
     steps:
-      - name: Obtendo o código
-        uses: actions/checkout@v4.1.5
+      - name: "Fake teste"
+        run: "Fake teste de ambiente ${{ $vars.APP_NAMESPACE }}"
 
-      - name: Configuração de credenciais AWS
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
 
-      - name: Configuração de contexto do Kubernetes
-        uses: azure/k8s-set-context@v4.0.0
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.K8S_CONFIG }}
+  # ==========================================
+  # CD - PRODUÇÃO
+  # ==========================================
+   CD-Producao:
+    name: Deploy em Produção
+    needs: [CD-Homolog]
 
-      - name: Execução do Manifesto
-        uses: Azure/k8s-deploy@v5
-        with:
-          manifests: |
-            ./k8s/deployment.yaml
-          images: |
-            lucascardoso1/aula-primeira-pipeline:v${{ github.run_number }}
+    uses: ./.github/workflows/deploy.yaml@main
+
+    with:
+      manifests: ./k8s/deployment.yaml
+      images: lucascardoso1/aula-primeira-pipeline:v${{ github.run_number }}
+      environment: producao
+
+
