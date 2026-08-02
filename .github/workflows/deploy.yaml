@@ -22,8 +22,8 @@ jobs:
   deploy-k8s:
     name: Deploy no Amazon EKS
     runs-on: ubuntu-latest
-#
-    # Seleciona homologacao ou producao
+
+    # Seleciona o Environment: homologacao ou producao
     environment: ${{ inputs.environment }}
 
     steps:
@@ -31,33 +31,6 @@ jobs:
       # Baixa os arquivos do repositório
       - name: Obtendo o código
         uses: actions/checkout@v4
-
-      - name: Validando secrets do ambiente
-        shell: bash
-        env:
-          ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          SECRET_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          KUBE_CONFIG: ${{ secrets.K8S_CONFIG }}
-        run: |
-          echo "Environment selecionado: ${{ inputs.environment }}"
-          echo "Namespace: ${{ vars.APP_NAMESPACE }}"
-
-          if [ -z "$ACCESS_KEY" ]; then
-            echo "::error::AWS_ACCESS_KEY_ID está vazio no Environment ${{ inputs.environment }}"
-            exit 1
-          fi
-
-          if [ -z "$SECRET_KEY" ]; then
-            echo "::error::AWS_SECRET_ACCESS_KEY está vazio no Environment ${{ inputs.environment }}"
-            exit 1
-          fi
-
-          if [ -z "$KUBE_CONFIG" ]; then
-            echo "::error::K8S_CONFIG está vazio no Environment ${{ inputs.environment }}"
-            exit 1
-          fi
-
-          echo "Todos os secrets foram encontrados."
 
       # Usa as credenciais AWS do Environment selecionado
       - name: Configurando credenciais AWS
@@ -77,6 +50,12 @@ jobs:
         with:
           method: kubeconfig
           kubeconfig: ${{ secrets.K8S_CONFIG }}
+
+      # Cria o namespace somente se ele não existir
+      - name: Verificando namespace
+        run: |
+          kubectl get namespace "${{ vars.APP_NAMESPACE }}" \
+            || kubectl create namespace "${{ vars.APP_NAMESPACE }}"
 
       # Testa o acesso ao cluster
       - name: Testando acesso ao Kubernetes
